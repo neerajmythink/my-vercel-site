@@ -1,10 +1,464 @@
+```html
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>My First Vercel Website</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Balloon Pop!</title>
+
+    <style>
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            overflow: hidden;
+            font-family: Arial, sans-serif;
+            background: linear-gradient(#75cfff, #dff6ff);
+            user-select: none;
+        }
+
+        #game {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        #header {
+            position: absolute;
+            top: 15px;
+            left: 50%;
+            transform: translateX(-50%);
+            z-index: 100;
+            background: rgba(255, 255, 255, 0.9);
+            padding: 10px 24px;
+            border-radius: 30px;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.15);
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        #score {
+            color: #333;
+        }
+
+        #lives {
+            margin-left: 20px;
+        }
+
+        .balloon {
+            position: absolute;
+            width: 55px;
+            height: 70px;
+            border-radius: 50% 50% 45% 45%;
+            cursor: pointer;
+            box-shadow:
+                inset -10px -10px 15px rgba(0,0,0,0.15),
+                inset 10px 10px 15px rgba(255,255,255,0.35),
+                2px 5px 10px rgba(0,0,0,0.15);
+
+            transition: transform 0.08s;
+        }
+
+        .balloon:hover {
+            transform: scale(1.08);
+        }
+
+        .balloon::after {
+            content: "";
+            position: absolute;
+            bottom: -7px;
+            left: 22px;
+            width: 0;
+            height: 0;
+            border-left: 6px solid transparent;
+            border-right: 6px solid transparent;
+            border-top: 10px solid currentColor;
+        }
+
+        .string {
+            position: absolute;
+            top: 70px;
+            left: 27px;
+            width: 1px;
+            height: 45px;
+            background: rgba(50,50,50,0.5);
+        }
+
+        .red {
+            background: radial-gradient(circle at 30% 25%, #ff8a8a, #e53935);
+            color: #c62828;
+        }
+
+        .blue {
+            background: radial-gradient(circle at 30% 25%, #8ed8ff, #2196f3);
+            color: #1976d2;
+        }
+
+        .yellow {
+            background: radial-gradient(circle at 30% 25%, #fff59d, #fbc02d);
+            color: #f9a825;
+        }
+
+        .green {
+            background: radial-gradient(circle at 30% 25%, #a5f5b0, #43a047);
+            color: #388e3c;
+        }
+
+        .purple {
+            background: radial-gradient(circle at 30% 25%, #d7a7ff, #8e44ad);
+            color: #7b1fa2;
+        }
+
+        .pop {
+            animation: pop 0.18s ease-out forwards;
+        }
+
+        @keyframes pop {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+
+            100% {
+                transform: scale(1.7);
+                opacity: 0;
+            }
+        }
+
+        .particle {
+            position: absolute;
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            pointer-events: none;
+            animation: particle 0.5s ease-out forwards;
+        }
+
+        @keyframes particle {
+            from {
+                transform: translate(0, 0) scale(1);
+                opacity: 1;
+            }
+
+            to {
+                transform: translate(var(--x), var(--y)) scale(0);
+                opacity: 0;
+            }
+        }
+
+        #startScreen {
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            background: rgba(0, 80, 130, 0.25);
+            backdrop-filter: blur(3px);
+        }
+
+        #startScreen h1 {
+            font-size: clamp(40px, 8vw, 80px);
+            margin: 0 0 10px;
+            color: white;
+            text-shadow: 3px 4px 0 rgba(0,0,0,0.2);
+        }
+
+        #startScreen p {
+            color: white;
+            font-size: 20px;
+        }
+
+        button {
+            border: none;
+            padding: 15px 35px;
+            border-radius: 35px;
+            font-size: 20px;
+            font-weight: bold;
+            cursor: pointer;
+            background: white;
+            color: #1976d2;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+
+        button:hover {
+            transform: scale(1.05);
+        }
+
+        #gameOver {
+            display: none;
+            position: absolute;
+            inset: 0;
+            z-index: 200;
+            justify-content: center;
+            align-items: center;
+            flex-direction: column;
+            background: rgba(0,0,0,0.3);
+            color: white;
+        }
+
+        #gameOver h2 {
+            font-size: 55px;
+            margin: 0;
+        }
+
+        #finalScore {
+            font-size: 28px;
+            margin: 15px;
+        }
+
+        .cloud {
+            position: absolute;
+            background: white;
+            border-radius: 100px;
+            opacity: 0.7;
+            width: 130px;
+            height: 40px;
+        }
+
+        .cloud::before,
+        .cloud::after {
+            content: "";
+            position: absolute;
+            background: white;
+            border-radius: 50%;
+        }
+
+        .cloud::before {
+            width: 55px;
+            height: 55px;
+            left: 20px;
+            bottom: 15px;
+        }
+
+        .cloud::after {
+            width: 70px;
+            height: 70px;
+            right: 15px;
+            bottom: 10px;
+        }
+    </style>
 </head>
+
 <body>
-    <h1>Hello from Vercel! 🚀</h1>
-    <p>This website is deployed from my MacBook.</p>
+
+<div id="game">
+
+    <div class="cloud" style="top:15%; left:8%;"></div>
+    <div class="cloud" style="top:25%; right:10%; transform:scale(.8);"></div>
+    <div class="cloud" style="top:55%; left:40%; transform:scale(.6);"></div>
+
+    <div id="header">
+        <span id="score">Score: 0</span>
+        <span id="lives">❤️❤️❤️</span>
+    </div>
+
+    <div id="startScreen">
+        <h1>🎈 Balloon Pop!</h1>
+        <p>Pop the balloons before they escape!</p>
+        <button onclick="startGame()">Start Game</button>
+    </div>
+
+    <div id="gameOver">
+        <h2>Game Over!</h2>
+        <div id="finalScore">Score: 0</div>
+        <button onclick="startGame()">Play Again</button>
+    </div>
+
+</div>
+
+<script>
+    const game = document.getElementById("game");
+    const scoreElement = document.getElementById("score");
+    const livesElement = document.getElementById("lives");
+    const startScreen = document.getElementById("startScreen");
+    const gameOverScreen = document.getElementById("gameOver");
+    const finalScore = document.getElementById("finalScore");
+
+    const colors = ["red", "blue", "yellow", "green", "purple"];
+
+    let score = 0;
+    let lives = 3;
+    let gameRunning = false;
+    let spawnTimer;
+    let difficultyTimer;
+    let spawnInterval = 850;
+
+    function startGame() {
+        score = 0;
+        lives = 3;
+        spawnInterval = 850;
+        gameRunning = true;
+
+        scoreElement.textContent = "Score: 0";
+        updateLives();
+
+        startScreen.style.display = "none";
+        gameOverScreen.style.display = "none";
+
+        document.querySelectorAll(".balloon").forEach(b => b.remove());
+
+        clearInterval(spawnTimer);
+        clearInterval(difficultyTimer);
+
+        spawnTimer = setInterval(createBalloon, spawnInterval);
+
+        difficultyTimer = setInterval(() => {
+            if (spawnInterval > 300) {
+                spawnInterval -= 50;
+
+                clearInterval(spawnTimer);
+                spawnTimer = setInterval(createBalloon, spawnInterval);
+            }
+        }, 5000);
+    }
+
+    function createBalloon() {
+        if (!gameRunning) return;
+
+        const balloon = document.createElement("div");
+
+        const color =
+            colors[Math.floor(Math.random() * colors.length)];
+
+        balloon.className = `balloon ${color}`;
+
+        const maxX = window.innerWidth - 70;
+        const x = Math.random() * maxX;
+
+        balloon.style.left = `${x}px`;
+        balloon.style.bottom = "-120px";
+
+        const string = document.createElement("div");
+        string.className = "string";
+        balloon.appendChild(string);
+
+        game.appendChild(balloon);
+
+        balloon.addEventListener("click", function(event) {
+            event.stopPropagation();
+            popBalloon(balloon, x);
+        });
+
+        // Random speed
+        const speed = 2.5 + Math.random() * 2.5;
+
+        let y = -120;
+        let lastTime = performance.now();
+
+        function moveBalloon(currentTime) {
+            if (!balloon.isConnected || !gameRunning) return;
+
+            const delta = (currentTime - lastTime) / 16.67;
+            lastTime = currentTime;
+
+            y += speed * delta;
+
+            balloon.style.bottom = `${y}px`;
+
+            if (y > window.innerHeight + 100) {
+                balloon.remove();
+
+                if (!balloon.dataset.popped) {
+                    loseLife();
+                }
+
+                return;
+            }
+
+            requestAnimationFrame(moveBalloon);
+        }
+
+        requestAnimationFrame(moveBalloon);
+    }
+
+    function popBalloon(balloon, x) {
+        if (balloon.dataset.popped) return;
+
+        balloon.dataset.popped = "true";
+
+        score++;
+        scoreElement.textContent = `Score: ${score}`;
+
+        createParticles(balloon);
+
+        balloon.classList.add("pop");
+
+        setTimeout(() => {
+            balloon.remove();
+        }, 180);
+    }
+
+    function createParticles(balloon) {
+        const rect = balloon.getBoundingClientRect();
+
+        for (let i = 0; i < 8; i++) {
+            const particle = document.createElement("div");
+
+            particle.className = "particle";
+
+            particle.style.left =
+                `${rect.left + rect.width / 2}px`;
+
+            particle.style.top =
+                `${rect.top + rect.height / 2}px`;
+
+            particle.style.background =
+                colors[Math.floor(Math.random() * colors.length)];
+
+            particle.style.setProperty(
+                "--x",
+                `${(Math.random() - 0.5) * 120}px`
+            );
+
+            particle.style.setProperty(
+                "--y",
+                `${(Math.random() - 0.5) * 120}px`
+            );
+
+            game.appendChild(particle);
+
+            setTimeout(() => particle.remove(), 500);
+        }
+    }
+
+    function loseLife() {
+        if (!gameRunning) return;
+
+        lives--;
+
+        updateLives();
+
+        if (lives <= 0) {
+            endGame();
+        }
+    }
+
+    function updateLives() {
+        livesElement.textContent =
+            "❤️".repeat(lives) +
+            "🖤".repeat(3 - lives);
+    }
+
+    function endGame() {
+        gameRunning = false;
+
+        clearInterval(spawnTimer);
+        clearInterval(difficultyTimer);
+
+        document.querySelectorAll(".balloon").forEach(b => b.remove());
+
+        finalScore.textContent = `Your score: ${score}`;
+
+        gameOverScreen.style.display = "flex";
+    }
+</script>
+
 </body>
 </html>
+```
+
